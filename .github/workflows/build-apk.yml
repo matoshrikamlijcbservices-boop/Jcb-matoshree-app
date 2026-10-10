@@ -3,8 +3,6 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    paths:
-      - "*.zip"
 
 jobs:
   build:
@@ -27,18 +25,12 @@ jobs:
         with:
           gradle-version: "9.3.1"
 
-      - name: Extract project
-        run: |
-          mkdir project
-          unzip "$(find . -maxdepth 1 -name "*.zip" | head -1)" -d project
-
       - name: Build debug APK
         run: |
-          cd project
           gradle assembleDebug
 
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
           name: Matoshree-APK
-          path: project/app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
