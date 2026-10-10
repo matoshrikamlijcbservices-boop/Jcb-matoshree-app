@@ -1,6 +1,9 @@
 package com.example.ui.screens
 
 import android.content.Intent
+import android.widget.Toast
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Security
@@ -158,6 +162,66 @@ fun ExportBackupScreen(viewModel: MainViewModel) {
                         Icon(Icons.Default.Share, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Export & Share System Snapshot")
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Android, contentDescription = null, tint = SuccessGreen)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Install & Share APK", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = NavyDark)
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "Directly share or install the application package (APK) on any Android smartphone, JCB operator device, or tablet.",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            try {
+                                val packageSource = context.packageCodePath
+                                val sourceFile = File(packageSource)
+                                if (sourceFile.exists()) {
+                                    val apkCache = File(context.cacheDir, "MatoshreeKamalai.apk")
+                                    sourceFile.copyTo(apkCache, overwrite = true)
+                                    val uri = FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.fileprovider",
+                                        apkCache
+                                    )
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/vnd.android.package-archive"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        putExtra(Intent.EXTRA_SUBJECT, "Matoshree Kamalai App APK")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Share & Install APK"))
+                                } else {
+                                    Toast.makeText(context, "APK file located in build/outputs/apk/debug", Toast.LENGTH_LONG).show()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Export error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Android, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Share / Install App APK")
                     }
                 }
             }

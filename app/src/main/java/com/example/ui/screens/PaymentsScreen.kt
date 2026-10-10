@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.AlertDialog
@@ -60,6 +61,7 @@ import com.example.ui.components.PdfGenerator
 import com.example.ui.components.formatCurrency
 import com.example.ui.theme.ConstructionYellowDark
 import com.example.ui.theme.DangerRed
+import com.example.ui.theme.InfoBlue
 import com.example.ui.theme.NavyDark
 import com.example.ui.theme.SuccessGreen
 import com.example.ui.viewmodel.MainViewModel
@@ -186,6 +188,24 @@ fun PaymentsScreen(viewModel: MainViewModel) {
                                         Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(14.dp), tint = DangerRed)
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text("Receipt PDF", fontSize = 12.sp)
+                                    }
+
+                                    Spacer(modifier = Modifier.width(6.dp))
+
+                                    OutlinedButton(
+                                        onClick = {
+                                            val pngFile = PdfGenerator.generatePaymentReceiptPng(context, p, settings)
+                                            if (pngFile != null) {
+                                                PdfGenerator.sharePng(context, pngFile, "Receipt ${p.paymentNumber}")
+                                            } else {
+                                                Toast.makeText(context, "Could not generate PNG receipt", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(14.dp), tint = InfoBlue)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Receipt PNG", fontSize = 12.sp)
                                     }
 
                                     Spacer(modifier = Modifier.width(8.dp))

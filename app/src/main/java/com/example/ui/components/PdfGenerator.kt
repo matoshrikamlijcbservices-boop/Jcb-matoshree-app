@@ -2,6 +2,7 @@ package com.example.ui.components
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -19,18 +20,14 @@ import java.util.Locale
 object PdfGenerator {
 
     /**
-     * Generates a high-quality A4 PDF for an Invoice
+     * Renders standard A4 invoice canvas graphics.
+     * Width: 595, Height: 842.
      */
-    fun generateInvoicePdf(
-        context: Context,
+    private fun renderInvoiceToCanvas(
+        canvas: Canvas,
         invoice: Invoice,
         settings: BusinessSettings
-    ): File? {
-        val document = PdfDocument()
-        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // Standard A4 points
-        val page = document.startPage(pageInfo)
-        val canvas: Canvas = page.canvas
-
+    ) {
         val paint = Paint().apply { isAntiAlias = true }
 
         // Navy Header Banner
@@ -101,12 +98,10 @@ object PdfGenerator {
         paint.color = Color.WHITE
         paint.textSize = 9.5f
         paint.isFakeBoldText = true
-        canvas.drawText("Description of Work", 36f, y + 16f, paint)
-        canvas.drawText("Date", 230f, y + 16f, paint)
-        canvas.drawText("Mtr Start", 300f, y + 16f, paint)
-        canvas.drawText("Mtr End", 360f, y + 16f, paint)
-        canvas.drawText("Hours", 420f, y + 16f, paint)
-        canvas.drawText("Rate (₹)", 470f, y + 16f, paint)
+        canvas.drawText("Machine & Working Entry", 36f, y + 16f, paint)
+        canvas.drawText("Time / Readings", 240f, y + 16f, paint)
+        canvas.drawText("Hours", 400f, y + 16f, paint)
+        canvas.drawText("Rate (₹)", 465f, y + 16f, paint)
         canvas.drawText("Amount (₹)", 515f, y + 16f, paint)
 
         // Line Items
@@ -117,9 +112,9 @@ object PdfGenerator {
 
         if (lineItems.isEmpty()) {
             canvas.drawText(invoice.worksite.ifEmpty { "Earthmoving & JCB excavation services" }, 36f, y + 16f, paint)
-            canvas.drawText(invoice.invoiceDate, 230f, y + 16f, paint)
-            canvas.drawText("1.0", 420f, y + 16f, paint)
-            canvas.drawText(String.format(Locale.ENGLISH, "%.2f", invoice.subtotal), 470f, y + 16f, paint)
+            canvas.drawText(invoice.invoiceDate, 240f, y + 16f, paint)
+            canvas.drawText("1.0", 400f, y + 16f, paint)
+            canvas.drawText(String.format(Locale.ENGLISH, "%.2f", invoice.subtotal), 465f, y + 16f, paint)
             canvas.drawText(String.format(Locale.ENGLISH, "%.2f", invoice.subtotal), 515f, y + 16f, paint)
             y += 24f
         } else {
@@ -129,12 +124,19 @@ object PdfGenerator {
 
                 paint.color = Color.rgb(30, 41, 59)
                 paint.textSize = 9f
-                canvas.drawText(item.description.take(30), 36f, y + 14f, paint)
-                canvas.drawText(item.workDate, 230f, y + 14f, paint)
-                canvas.drawText(if (item.openingMeter > 0) String.format(Locale.ENGLISH, "%.1f", item.openingMeter) else "-", 300f, y + 14f, paint)
-                canvas.drawText(if (item.closingMeter > 0) String.format(Locale.ENGLISH, "%.1f", item.closingMeter) else "-", 360f, y + 14f, paint)
-                canvas.drawText(String.format(Locale.ENGLISH, "%.2f", item.hours), 420f, y + 14f, paint)
-                canvas.drawText(String.format(Locale.ENGLISH, "%.2f", item.hourlyRate), 470f, y + 14f, paint)
+                val entryDesc = if (item.description.isNotBlank()) item.description else "${item.machineLabel} - ${item.workType}"
+                val timeOrMtr = if (item.startTime.isNotBlank() && item.endTime.isNotBlank()) {
+                    "${item.startTime} to ${item.endTime}"
+                } else if (item.openingMeter > 0 || item.closingMeter > 0) {
+                    "${item.openingMeter} -> ${item.closingMeter}"
+                } else {
+                    item.workDate
+                }
+
+                canvas.drawText(entryDesc.take(32), 36f, y + 14f, paint)
+                canvas.drawText(timeOrMtr.take(24), 240f, y + 14f, paint)
+                canvas.drawText(String.format(Locale.ENGLISH, "%.2f", item.hours), 400f, y + 14f, paint)
+                canvas.drawText(String.format(Locale.ENGLISH, "%.2f", item.hourlyRate), 465f, y + 14f, paint)
                 canvas.drawText(String.format(Locale.ENGLISH, "%.2f", item.amount), 515f, y + 14f, paint)
 
                 y += 22f
@@ -234,34 +236,17 @@ object PdfGenerator {
         paint.isFakeBoldText = false
         paint.color = Color.rgb(100, 116, 139)
         canvas.drawText("Authorized Signatory", 400f, footerY + 68f, paint)
-
-        document.finishPage(page)
-
-        return try {
-            val file = File(context.cacheDir, "Invoice_${invoice.invoiceNumber}.pdf")
-            val outputStream = FileOutputStream(file)
-            document.writeTo(outputStream)
-            outputStream.close()
-            document.close()
-            file
-        } catch (e: Exception) {
-            document.close()
-            null
-        }
     }
 
     /**
-     * Generates a payment receipt PDF
+     * Renders voucher receipt graphics.
+     * Width: 595, Height: 420.
      */
-    fun generatePaymentReceiptPdf(
-        context: Context,
+    private fun renderPaymentReceiptToCanvas(
+        canvas: Canvas,
         payment: Payment,
         settings: BusinessSettings
-    ): File? {
-        val document = PdfDocument()
-        val pageInfo = PdfDocument.PageInfo.Builder(595, 420, 1).create() // Half sheet / A5 voucher
-        val page = document.startPage(pageInfo)
-        val canvas: Canvas = page.canvas
+    ) {
         val paint = Paint().apply { isAntiAlias = true }
 
         // Navy Header
@@ -338,7 +323,77 @@ object PdfGenerator {
         paint.isFakeBoldText = false
         paint.color = Color.rgb(100, 116, 139)
         canvas.drawText("Authorized Signatory", 400f, y + 30f, paint)
+    }
 
+    /**
+     * Generates a high-quality A4 PDF for an Invoice
+     */
+    fun generateInvoicePdf(
+        context: Context,
+        invoice: Invoice,
+        settings: BusinessSettings
+    ): File? {
+        val document = PdfDocument()
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // Standard A4 points
+        val page = document.startPage(pageInfo)
+        renderInvoiceToCanvas(page.canvas, invoice, settings)
+        document.finishPage(page)
+
+        return try {
+            val file = File(context.cacheDir, "Invoice_${invoice.invoiceNumber}.pdf")
+            val outputStream = FileOutputStream(file)
+            document.writeTo(outputStream)
+            outputStream.close()
+            document.close()
+            file
+        } catch (e: Exception) {
+            document.close()
+            null
+        }
+    }
+
+    /**
+     * Generates high-resolution PNG image file for an Invoice
+     */
+    fun generateInvoicePng(
+        context: Context,
+        invoice: Invoice,
+        settings: BusinessSettings
+    ): File? {
+        return try {
+            val scale = 2f // High-definition 2x scaling (1190 x 1684 px)
+            val width = (595 * scale).toInt()
+            val height = (842 * scale).toInt()
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawColor(Color.WHITE) // White background
+            canvas.scale(scale, scale)
+
+            renderInvoiceToCanvas(canvas, invoice, settings)
+
+            val file = File(context.cacheDir, "Invoice_${invoice.invoiceNumber}.png")
+            val outputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+            file
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Generates a payment receipt PDF
+     */
+    fun generatePaymentReceiptPdf(
+        context: Context,
+        payment: Payment,
+        settings: BusinessSettings
+    ): File? {
+        val document = PdfDocument()
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 420, 1).create() // Half sheet / A5 voucher
+        val page = document.startPage(pageInfo)
+        renderPaymentReceiptToCanvas(page.canvas, payment, settings)
         document.finishPage(page)
 
         return try {
@@ -355,6 +410,36 @@ object PdfGenerator {
     }
 
     /**
+     * Generates high-resolution PNG image file for a payment receipt
+     */
+    fun generatePaymentReceiptPng(
+        context: Context,
+        payment: Payment,
+        settings: BusinessSettings
+    ): File? {
+        return try {
+            val scale = 2f
+            val width = (595 * scale).toInt()
+            val height = (420 * scale).toInt()
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawColor(Color.WHITE)
+            canvas.scale(scale, scale)
+
+            renderPaymentReceiptToCanvas(canvas, payment, settings)
+
+            val file = File(context.cacheDir, "Receipt_${payment.paymentNumber}.png")
+            val outputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+            file
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * Share or open the generated PDF
      */
     fun sharePdf(context: Context, file: File, title: String) {
@@ -365,6 +450,24 @@ object PdfGenerator {
         )
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share $title"))
+    }
+
+    /**
+     * Share or open the generated PNG image
+     */
+    fun sharePng(context: Context, file: File, title: String) {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
             putExtra(Intent.EXTRA_SUBJECT, title)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
@@ -247,6 +248,26 @@ fun AllBillsScreen(viewModel: MainViewModel) {
                                     Text("PDF", fontSize = 12.sp)
                                 }
 
+                                Spacer(modifier = Modifier.width(6.dp))
+
+                                // PNG Image Download & Share
+                                OutlinedButton(
+                                    onClick = {
+                                        val pngFile = PdfGenerator.generateInvoicePng(context, inv, settings)
+                                        if (pngFile != null) {
+                                            PdfGenerator.sharePng(context, pngFile, "Invoice ${inv.invoiceNumber}")
+                                        } else {
+                                            Toast.makeText(context, "Failed to generate PNG", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.testTag("btn_png_${inv.invoiceNumber}")
+                                ) {
+                                    Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp), tint = InfoBlue)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("PNG", fontSize = 12.sp)
+                                }
+
                                 Spacer(modifier = Modifier.width(8.dp))
 
                                 // Quick Collect Payment (if balance remains)
@@ -391,17 +412,34 @@ fun AllBillsScreen(viewModel: MainViewModel) {
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        val pdfFile = PdfGenerator.generateInvoicePdf(context, inv, settings)
-                        if (pdfFile != null) {
-                            PdfGenerator.sharePdf(context, pdfFile, "Invoice ${inv.invoiceNumber}")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            val pngFile = PdfGenerator.generateInvoicePng(context, inv, settings)
+                            if (pngFile != null) {
+                                PdfGenerator.sharePng(context, pngFile, "Invoice ${inv.invoiceNumber}")
+                            } else {
+                                Toast.makeText(context, "Failed to generate PNG", Toast.LENGTH_SHORT).show()
+                            }
                         }
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp), tint = InfoBlue)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("PNG")
                     }
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Share PDF")
+
+                    Button(
+                        onClick = {
+                            val pdfFile = PdfGenerator.generateInvoicePdf(context, inv, settings)
+                            if (pdfFile != null) {
+                                PdfGenerator.sharePdf(context, pdfFile, "Invoice ${inv.invoiceNumber}")
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("PDF")
+                    }
                 }
             },
             dismissButton = {

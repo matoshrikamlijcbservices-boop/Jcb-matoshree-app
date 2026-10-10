@@ -32,19 +32,26 @@ jobs:
           echo "PROJECT_ROOT=$PROJECT_ROOT" >> $GITHUB_ENV
           echo "Found Android project at: $PROJECT_ROOT"
 
-      - name: Generate Debug Keystore in Correct Path
+      - name: Setup Debug Keystore
         run: |
           mkdir -p "$PROJECT_ROOT/app"
-          
-          keytool -genkey -v \
-            -keystore "$PROJECT_ROOT/app/debug.keystore" \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Android Debug, O=Android, C=US"
+          if [ -f "$PROJECT_ROOT/debug.keystore.base64" ]; then
+            echo "Restoring debug.keystore from base64 (preserves Firebase SHA-1)..."
+            base64 -d "$PROJECT_ROOT/debug.keystore.base64" > "$PROJECT_ROOT/debug.keystore"
+          elif [ ! -f "$PROJECT_ROOT/debug.keystore" ]; then
+            echo "Generating new debug.keystore..."
+            keytool -genkey -v \
+              -keystore "$PROJECT_ROOT/debug.keystore" \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug, O=Android, C=US"
+          fi
+          # Ensure keystore exists at both root (where build.gradle.kts looks) and app/
+          cp -f "$PROJECT_ROOT/debug.keystore" "$PROJECT_ROOT/app/debug.keystore" 2>/dev/null || true
 
       - name: Build Debug APK
         run: |

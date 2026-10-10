@@ -42,6 +42,8 @@ class FirestoreSyncManager(private val context: Context) {
                 "gstin" to settings.gstin,
                 "invoicePrefix" to settings.invoicePrefix,
                 "defaultHourlyRate" to settings.defaultHourlyRate,
+                "defaultBucketRate" to settings.defaultBucketRate,
+                "defaultBreakerRate" to settings.defaultBreakerRate,
                 "upiId" to settings.upiId,
                 "bankName" to settings.bankName,
                 "accountHolder" to settings.accountHolder,

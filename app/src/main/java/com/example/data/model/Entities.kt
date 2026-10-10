@@ -16,6 +16,8 @@ data class BusinessSettings(
     val gstin: String = "",
     val invoicePrefix: String = "MKLDB-",
     val defaultHourlyRate: Double = 1800.0,
+    val defaultBucketRate: Double = 1500.0,
+    val defaultBreakerRate: Double = 2000.0,
     val upiId: String = "matoshreekamalai@upi",
     val bankName: String = "State Bank of India",
     val accountHolder: String = "Matoshree Kamalai Land Developers and Builders",
@@ -94,13 +96,17 @@ data class WorkRecord(
 )
 
 data class InvoiceLineItem(
-    val description: String,
-    val workDate: String,
+    val description: String = "",
+    val workDate: String = "",
     val openingMeter: Double = 0.0,
     val closingMeter: Double = 0.0,
-    val hours: Double,
-    val hourlyRate: Double,
-    val amount: Double
+    val hours: Double = 0.0,
+    val hourlyRate: Double = 0.0,
+    val amount: Double = 0.0,
+    val machineLabel: String = "Machine 1",
+    val workType: String = "BUCKET", // BUCKET or BREAKER
+    val startTime: String = "",
+    val endTime: String = ""
 ) {
     fun toJsonObject(): JSONObject {
         return JSONObject().apply {
@@ -111,6 +117,10 @@ data class InvoiceLineItem(
             put("hours", hours)
             put("hourlyRate", hourlyRate)
             put("amount", amount)
+            put("machineLabel", machineLabel)
+            put("workType", workType)
+            put("startTime", startTime)
+            put("endTime", endTime)
         }
     }
 
@@ -123,7 +133,11 @@ data class InvoiceLineItem(
                 closingMeter = obj.optDouble("closingMeter", 0.0),
                 hours = obj.optDouble("hours", 0.0),
                 hourlyRate = obj.optDouble("hourlyRate", 0.0),
-                amount = obj.optDouble("amount", 0.0)
+                amount = obj.optDouble("amount", 0.0),
+                machineLabel = obj.optString("machineLabel", "Machine 1"),
+                workType = obj.optString("workType", "BUCKET"),
+                startTime = obj.optString("startTime", ""),
+                endTime = obj.optString("endTime", "")
             )
         }
 

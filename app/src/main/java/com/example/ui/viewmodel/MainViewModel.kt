@@ -237,6 +237,71 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun saveBillWithCustomerAndPayment(
+        customerName: String,
+        customerPhone: String,
+        customerAddress: String,
+        invoice: Invoice,
+        paymentAmount: Double,
+        onSuccess: (Long) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val currentCustomers = customersState.value
+            val existing = currentCustomers.find { it.name.trim().equals(customerName.trim(), ignoreCase = true) }
+            val customerId = if (existing != null) {
+                if (customerPhone.isNotBlank() && existing.phone != customerPhone.trim()) {
+                    repository.updateCustomer(existing.copy(phone = customerPhone.trim(), address = customerAddress.trim().ifEmpty { existing.address }))
+                }
+                existing.id
+            } else {
+                val newCust = Customer(
+                    name = customerName.trim(),
+                    phone = customerPhone.trim(),
+                    address = customerAddress.trim(),
+                    isActive = true
+                )
+                val newId = repository.insertCustomer(newCust)
+                firestoreSyncManager.syncCustomer(newCust.copy(id = newId))
+                newId
+            }
+
+            val invoiceToSave = invoice.copy(
+                customerId = customerId,
+                customerName = customerName.trim(),
+                customerPhone = customerPhone.trim(),
+                customerAddress = customerAddress.trim()
+            )
+
+            val invoiceId = repository.createInvoice(invoiceToSave)
+            firestoreSyncManager.syncInvoice(invoiceToSave.copy(id = invoiceId))
+
+            if (paymentAmount > 0.0) {
+                val payNumber = "PAY-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ENGLISH).format(Date())
+                val payment = Payment(
+                    paymentNumber = payNumber,
+                    customerId = customerId,
+                    customerName = customerName.trim(),
+                    invoiceId = invoiceId,
+                    invoiceNumber = invoiceToSave.invoiceNumber,
+                    paymentDate = invoiceToSave.invoiceDate,
+                    amount = paymentAmount,
+                    paymentMethod = "CASH",
+                    notes = "Payment received on bill creation"
+                )
+                val payId = repository.recordPayment(payment)
+                firestoreSyncManager.syncPayment(payment.copy(id = payId))
+                // Sync the invoice again with its updated payment status and balance
+                val updatedInvoice = repository.getInvoiceById(invoiceId)
+                if (updatedInvoice != null) {
+                    firestoreSyncManager.syncInvoice(updatedInvoice)
+                }
+            }
+
+            showMessage("Bill saved successfully for ${customerName.trim()}!")
+            onSuccess(invoiceId)
+        }
+    }
+
     fun voidInvoice(invoiceId: Long) {
         viewModelScope.launch {
             repository.voidInvoice(invoiceId)
