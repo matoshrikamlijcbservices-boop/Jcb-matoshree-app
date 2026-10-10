@@ -1,0 +1,166 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidBusinessSettings(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.companyName is string && data.companyName.size() >= 3 && data.companyName.size() <= 200 &&
+             (!('phone' in data) || data.phone is string) &&
+             (!('email' in data) || data.email is string) &&
+             (!('address' in data) || data.address is string) &&
+             (!('defaultHourlyRate' in data) || data.defaultHourlyRate is number);
+    }
+
+    function isValidCustomer(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+             data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30 &&
+             (!('address' in data) || data.address is string) &&
+             (!('gstin' in data) || data.gstin is string) &&
+             (!('isActive' in data) || data.isActive is bool);
+    }
+
+    function isValidMachine(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.machineCode is string && data.machineCode.size() >= 1 && data.machineCode.size() <= 50 &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.defaultHourlyRate is number && data.defaultHourlyRate >= 0 &&
+             (!('regNumber' in data) || data.regNumber is string) &&
+             (!('currentMeterReading' in data) || data.currentMeterReading is number) &&
+             (!('status' in data) || data.status is string);
+    }
+
+    function isValidOperator(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30 &&
+             data.wageRate is number && data.wageRate >= 0 &&
+             (!('wageType' in data) || data.wageType is string) &&
+             (!('status' in data) || data.status is string);
+    }
+
+    function isValidWorkRecord(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.workDate is string && data.workDate.size() >= 4 &&
+             data.customerName is string && data.customerName.size() >= 2 &&
+             data.machineName is string && data.machineName.size() >= 2 &&
+             data.billableHours is number && data.billableHours >= 0 &&
+             data.hourlyRate is number && data.hourlyRate >= 0 &&
+             (!('openingMeter' in data) || data.openingMeter is number) &&
+             (!('closingMeter' in data) || data.closingMeter is number);
+    }
+
+    function isValidInvoice(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.invoiceNumber is string && data.invoiceNumber.size() >= 3 && data.invoiceNumber.size() <= 80 &&
+             data.customerName is string && data.customerName.size() >= 2 &&
+             data.grandTotal is number && data.grandTotal >= 0 &&
+             data.balanceDue is number && data.balanceDue >= 0 &&
+             data.status is string &&
+             (!('subtotal' in data) || data.subtotal is number) &&
+             (!('amountPaid' in data) || data.amountPaid is number);
+    }
+
+    function isValidPayment(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.paymentNumber is string && data.paymentNumber.size() >= 3 &&
+             data.customerName is string && data.customerName.size() >= 2 &&
+             data.amount is number && data.amount > 0 &&
+             data.paymentMethod is string;
+    }
+
+    function isValidExpense(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.category is string && data.category.size() >= 2 &&
+             data.amount is number && data.amount > 0 &&
+             data.description is string && data.description.size() >= 2;
+    }
+
+    // --- Collections ---
+
+    match /businesses/{userId} {
+      allow get: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidBusinessSettings(incoming());
+      allow delete: if false; // Business profile preserved
+    }
+
+    match /customers/{customerId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidCustomer(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == existing().userId && isValidCustomer(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /machines/{machineId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidMachine(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == existing().userId && isValidMachine(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /operators/{operatorId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidOperator(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == existing().userId && isValidOperator(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /workRecords/{recordId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidWorkRecord(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == existing().userId && isValidWorkRecord(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /invoices/{invoiceId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidInvoice(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == existing().userId && isValidInvoice(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /payments/{paymentId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidPayment(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == existing().userId && isValidPayment(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /expenses/{expenseId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidExpense(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == existing().userId && isValidExpense(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}

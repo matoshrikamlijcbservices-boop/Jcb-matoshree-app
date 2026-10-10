@@ -1,0 +1,230 @@
+{
+  "entities": {
+    "BusinessSettings": {
+      "title": "BusinessSettings",
+      "description": "Business profile and settings for Matoshree Kamalai Land Developers and Builders",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "companyName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "gstin": { "type": "string" },
+        "invoicePrefix": { "type": "string" },
+        "defaultHourlyRate": { "type": "number" },
+        "upiId": { "type": "string" },
+        "bankName": { "type": "string" },
+        "accountHolder": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "ifscCode": { "type": "string" },
+        "paymentInstructions": { "type": "string" },
+        "invoiceTerms": { "type": "string" },
+        "taxEnabled": { "type": "boolean" },
+        "cgstRate": { "type": "number" },
+        "sgstRate": { "type": "number" },
+        "igstRate": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "companyName"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer record for billing and earthmoving contracts",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "email": { "type": "string" },
+        "gstin": { "type": "string" },
+        "notes": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone"]
+    },
+    "Machine": {
+      "title": "Machine",
+      "description": "Earthmoving heavy machinery or JCB equipment",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "machineCode": { "type": "string" },
+        "name": { "type": "string" },
+        "regNumber": { "type": "string" },
+        "makeModel": { "type": "string" },
+        "machineType": { "type": "string" },
+        "defaultHourlyRate": { "type": "number" },
+        "currentMeterReading": { "type": "number" },
+        "status": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "machineCode", "name", "defaultHourlyRate"]
+    },
+    "Operator": {
+      "title": "Operator",
+      "description": "Machine operator and driver profile",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "wageType": { "type": "string" },
+        "wageRate": { "type": "number" },
+        "status": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone", "wageRate"]
+    },
+    "WorkRecord": {
+      "title": "WorkRecord",
+      "description": "Daily machine meter and operational log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "workDate": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "machineId": { "type": "string" },
+        "machineName": { "type": "string" },
+        "worksite": { "type": "string" },
+        "description": { "type": "string" },
+        "openingMeter": { "type": "number" },
+        "closingMeter": { "type": "number" },
+        "manualHours": { "type": "number" },
+        "nonBillableHours": { "type": "number" },
+        "billableHours": { "type": "number" },
+        "hourlyRate": { "type": "number" },
+        "operatorId": { "type": "string" },
+        "operatorName": { "type": "string" },
+        "invoiceId": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "workDate", "customerName", "machineName", "billableHours", "hourlyRate"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Generated billing invoice for customer earthmoving work",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "invoiceDate": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "customerGstin": { "type": "string" },
+        "worksite": { "type": "string" },
+        "machineName": { "type": "string" },
+        "lineItemsJson": { "type": "string" },
+        "subtotal": { "type": "number" },
+        "additionalCharges": { "type": "number" },
+        "dieselChargesBilled": { "type": "number" },
+        "transportCharges": { "type": "number" },
+        "operatorCharges": { "type": "number" },
+        "discount": { "type": "number" },
+        "taxAmount": { "type": "number" },
+        "taxDetails": { "type": "string" },
+        "grandTotal": { "type": "number" },
+        "amountPaid": { "type": "number" },
+        "balanceDue": { "type": "number" },
+        "status": { "type": "string" },
+        "paymentTerms": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "invoiceNumber", "customerName", "grandTotal", "balanceDue", "status"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Payment receipt collected against bill or customer account",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "paymentNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "invoiceId": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "paymentDate": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "transactionRef": { "type": "string" },
+        "notes": { "type": "string" },
+        "recordedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "paymentNumber", "customerName", "amount", "paymentMethod"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Operational expense log for diesel, wages, repairs, and overheads",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "expenseDate": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "machineId": { "type": "string" },
+        "machineName": { "type": "string" },
+        "supplier": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "referenceNo": { "type": "string" },
+        "description": { "type": "string" },
+        "receiptUri": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "expenseDate", "category", "amount", "description"]
+    }
+  },
+  "firestore": {
+    "/businesses/{userId}": {
+      "schema": "BusinessSettings",
+      "description": "Business settings owned by the authenticated business user"
+    },
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Customer records created and managed by the business owner"
+    },
+    "/machines/{machineId}": {
+      "schema": "Machine",
+      "description": "Machinery inventory records owned by the business user"
+    },
+    "/operators/{operatorId}": {
+      "schema": "Operator",
+      "description": "Equipment operator profiles owned by the business user"
+    },
+    "/workRecords/{recordId}": {
+      "schema": "WorkRecord",
+      "description": "Daily machine working shift logs owned by the business user"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Invoices and bills generated by the business user"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Payment receipts recorded by the business user"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Operating expenses logged by the business user"
+    }
+  }
+}
