@@ -25,14 +25,17 @@ jobs:
         with:
           gradle-version: '8.3'
 
-      - name: Generate Debug Keystore in Correct Path
+      - name: Locate Project Root
         run: |
-          PROJECT_ROOT=$(find . -name "build.gradle.kts" -o -name "build.gradle" -exec dirname {} \; | head -n 1)
+          PROJECT_ROOT=$(find . -name "build.gradle.kts" -o -name "build.gradle" | head -n 1 | xargs dirname)
           if [ -z "$PROJECT_ROOT" ]; then
             PROJECT_ROOT="."
           fi
-          echo "Project root found at: $PROJECT_ROOT"
-          
+          echo "PROJECT_ROOT=$PROJECT_ROOT" >> $GITHUB_ENV
+          echo "Found Android project at: $PROJECT_ROOT"
+
+      - name: Generate Debug Keystore in Correct Path
+        run: |
           mkdir -p "$PROJECT_ROOT/app"
           
           keytool -genkey -v \
@@ -44,14 +47,16 @@ jobs:
             -keysize 2048 \
             -validity 10000 \
             -dname "CN=Android Debug, O=Android, C=US"
-          
-          echo "Verifying keystore location:"
-          ls -la "$PROJECT_ROOT/app/debug.keystore"
 
       - name: Build Debug APK
         run: |
-          chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          cd "$PROJECT_ROOT"
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug --no-daemon
+          else
+            gradle assembleDebug --no-daemon
+          fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
